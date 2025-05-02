@@ -64,7 +64,7 @@ def draw_path(screen, path_func, color=NEON_BLUE):
                 # Draw glow (thick line)
                 pygame.draw.line(screen, (*color[:3], 100), 
                                 (int(screen_x1), int(screen_y1)), 
-                                (int(screen_x2), int(screen_y2)), 8)
+                                (int(screen_x2), int(screen_y2)), 4)
         
         # Draw main line (thin bright line)
         for i in range(len(screen_points) - 1):
@@ -171,7 +171,7 @@ def draw_coordinate_system(screen):
     
     # Draw tick marks and labels
     # X-axis ticks
-    for x in range(-300, 301, 100):
+    for x in range(-600, 601, 100):
         tick_x, tick_y = real_to_screen(x, 0)
         # Draw tick mark
         pygame.draw.line(screen, WHITE, (tick_x, tick_y - 5), (tick_x, tick_y + 5), 1)
@@ -181,7 +181,7 @@ def draw_coordinate_system(screen):
             screen.blit(label, (tick_x - label.get_width()//2, tick_y + 10))
     
     # Y-axis ticks
-    for y in range(-200, 201, 100):
+    for y in range(-400, 400, 100):
         tick_x, tick_y = real_to_screen(0, y)
         # Draw tick mark
         pygame.draw.line(screen, WHITE, (tick_x - 5, tick_y), (tick_x + 5, tick_y), 1)
@@ -199,8 +199,8 @@ def draw_level_complete(screen, total_stars):
     draw_text(screen, "LEVEL COMPLETE!", (WIDTH//4 + 50, HEIGHT//4 + 40), NEON_GREEN, TITLE_FONT, glow_effect=True)
     draw_text(screen, f"You collected all {total_stars} stars!", (WIDTH//4 + 60, HEIGHT//4 + 100), NEON_YELLOW)
     
-    draw_text(screen, "Press R to restart level", (WIDTH//4 + 70, HEIGHT//4 + 180), NEON_BLUE)
-    draw_text(screen, "Press ESC to quit", (WIDTH//4 + 90, HEIGHT//4 + 220), NEON_BLUE)
+    draw_text(screen, "Press Ctrl + R to restart level", (WIDTH//4 + 70, HEIGHT//4 + 180), NEON_BLUE)
+    draw_text(screen, "Press Ctrl + ESC to quit", (WIDTH//4 + 90, HEIGHT//4 + 220), NEON_BLUE)
 
 def draw_help_screen(screen):
     """Draw help screen with instructions - updated for real coordinates"""
@@ -213,11 +213,6 @@ def draw_help_screen(screen):
     help_texts = [
         "Guide the glowing ball to collect all stars using math!",
         "Type custom equations to create paths for the ball.",
-        "",
-        "The coordinate system uses real mathematical coordinates:",
-        "- (0,0) is at the center of the screen",
-        "- y increases upward, decreases downward",
-        "- x increases rightward, decreases leftward",
         "",
         "Example equations to try:",
         "- Line: 2*x",

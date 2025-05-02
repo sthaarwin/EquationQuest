@@ -4,7 +4,7 @@ import pygame
 pygame.init()
 
 # Window settings
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 1200, 675
 TITLE = "Equation Quest"
 
 # Coordinate system
@@ -36,11 +36,11 @@ STATE_HELP = "help"
 
 # Ball settings
 BALL_RADIUS = 15
-BALL_SPEED = 2
-GRAVITY = 0.2
+BALL_SPEED = 3
+GRAVITY = 0.0
 
-# Initial equation - modified for real coordinates
-DEFAULT_EQUATION = "0.01*x**2 - 50*sin(0.05*x)"  # Parabola with sine wave, centered around origin
+# Initial equation - modified for real coordinates to ensure the ball stays in view
+DEFAULT_EQUATION = "sin(x*0.01)*100"  # Simple sine wave that stays in reasonable bounds
 
 # Default star positions - now in real coordinates with (0,0) at center
 DEFAULT_STARS = [(-200, 100), (-100, -150), (0, 200), (150, -100), (250, 150)]

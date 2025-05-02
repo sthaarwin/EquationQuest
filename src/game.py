@@ -65,15 +65,20 @@ class Game:
             try:
                 # Start at left side of screen with x = X_MIN + 50
                 start_x = X_MIN + 50  # Real x-coordinate for ball start position
-                self.ball_pos = [start_x, self.path(start_x)]
+                print(f"Trying to reset ball at x={start_x}, equation={self.current_equation}")
+                start_y = self.path(start_x)
+                print(f"Calculated y position: {start_y}")
+                self.ball_pos = [start_x, start_y]
                 self.ball_speed = BALL_SPEED
                 self.on_path = True
                 self.reset_ball = False
+                print(f"Ball successfully reset at position: {self.ball_pos}")
             except Exception as e:
                 print(f"Error resetting ball: {e}")
                 self.ball_pos = [X_MIN + 50, 0]  # Default to center height
                 self.on_path = True
                 self.reset_ball = False
+                print(f"Using default ball position: {self.ball_pos}")
 
         # Update ball position in real coordinates
         if self.on_path:
