@@ -143,10 +143,11 @@ def draw_game_ui(screen, collected_stars, total_stars, current_equation, input_a
     draw_panel(screen, controls_panel, NEON_GREEN)
     # Header with glow, controls without
     draw_text(screen, "CONTROLS", (WIDTH - 180, 80), NEON_GREEN, MAIN_FONT, glow_effect=True)
-    draw_text(screen, "E - Edit equation", (WIDTH - 190, 110), NEON_GREEN, SMALL_FONT)
-    draw_text(screen, "R - Reset level", (WIDTH - 190, 130), NEON_GREEN, SMALL_FONT)
-    draw_text(screen, "H - Help screen", (WIDTH - 190, 150), NEON_GREEN, SMALL_FONT)
-    draw_text(screen, "ESC - Quit game", (WIDTH - 190, 170), NEON_GREEN, SMALL_FONT)
+    # Updated to use Ctrl for all controls
+    draw_text(screen, "Ctrl+E - Edit equation", (WIDTH - 190, 110), NEON_GREEN, SMALL_FONT)
+    draw_text(screen, "Ctrl+R - Reset level", (WIDTH - 190, 130), NEON_GREEN, SMALL_FONT)
+    draw_text(screen, "Ctrl+H - Help screen", (WIDTH - 190, 150), NEON_GREEN, SMALL_FONT)
+    draw_text(screen, "Ctrl+ESC - Quit game", (WIDTH - 190, 170), NEON_GREEN, SMALL_FONT)
 
 def draw_level_complete(screen, total_stars):
     """Draw level complete screen"""

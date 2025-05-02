@@ -25,29 +25,38 @@ def main():
     # Create game instance
     game = Game()
     
+    # Backspace handling variables
+    backspace_held = False
+    backspace_delay = 500  # Initial delay in ms before rapid deletion starts
+    backspace_rate = 50    # Time between deletions in ms during rapid deletion
+    backspace_timer = 0
+    
     # Main loop
     running = True
     clock = pygame.time.Clock()
     
     while running:
+        current_time = pygame.time.get_ticks()
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
                 
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+                # Changed: All commands now use Ctrl modifier
+                if event.key == pygame.K_ESCAPE and pygame.key.get_mods() & pygame.KMOD_CTRL:
                     running = False
                     
                 elif event.key == pygame.K_RETURN and game.input_active:
                     game.submit_equation()
                     
-                elif event.key == pygame.K_e and game.game_state == STATE_PLAYING:
+                elif event.key == pygame.K_e and pygame.key.get_mods() & pygame.KMOD_CTRL and game.game_state == STATE_PLAYING:
                     game.toggle_input()
                     
-                elif event.key == pygame.K_r:
+                elif event.key == pygame.K_r and pygame.key.get_mods() & pygame.KMOD_CTRL:
                     game.reset_level()
                     
-                elif event.key == pygame.K_h and game.game_state == STATE_PLAYING:
+                elif event.key == pygame.K_h and pygame.key.get_mods() & pygame.KMOD_CTRL and game.game_state == STATE_PLAYING:
                     game.game_state = STATE_HELP
                     
                 elif game.game_state == STATE_HELP:
@@ -57,8 +66,20 @@ def main():
                 elif game.input_active:
                     if event.key == pygame.K_BACKSPACE:
                         game.handle_backspace()
+                        backspace_held = True
+                        backspace_timer = current_time + backspace_delay
                     else:
                         game.add_character(event.unicode)
+            
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_BACKSPACE:
+                    backspace_held = False
+    
+        # Handle continuous backspace when held down
+        if backspace_held and game.input_active:
+            if current_time >= backspace_timer:
+                game.handle_backspace()
+                backspace_timer = current_time + backspace_rate
     
         # Update game state
         game.update()
