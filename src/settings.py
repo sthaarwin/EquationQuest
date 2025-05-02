@@ -7,6 +7,17 @@ pygame.init()
 WIDTH, HEIGHT = 800, 600
 TITLE = "Equation Quest"
 
+# Coordinate system
+# Origin is at the center of the screen
+ORIGIN_X = WIDTH // 2
+ORIGIN_Y = HEIGHT // 2
+
+# Define coordinate ranges
+X_MIN = -ORIGIN_X
+X_MAX = WIDTH - ORIGIN_X
+Y_MIN = -(HEIGHT - ORIGIN_Y)  # Bottom of screen (negative in real coordinates)
+Y_MAX = ORIGIN_Y              # Top of screen (positive in real coordinates)
+
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -28,11 +39,11 @@ BALL_RADIUS = 15
 BALL_SPEED = 2
 GRAVITY = 0.2
 
-# Initial equation
-DEFAULT_EQUATION = "0.001*x**2 + 0.1*sin(0.1*x) + 200"
+# Initial equation - modified for real coordinates
+DEFAULT_EQUATION = "0.01*x**2 - 50*sin(0.05*x)"  # Parabola with sine wave, centered around origin
 
-# Default star positions
-DEFAULT_STARS = [(200, 400), (400, 450), (600, 350), (300, 250), (500, 200)]
+# Default star positions - now in real coordinates with (0,0) at center
+DEFAULT_STARS = [(-200, 100), (-100, -150), (0, 200), (150, -100), (250, 150)]
 
 # Improved font loading
 def load_font(font_name, size):

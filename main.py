@@ -11,7 +11,8 @@ from src.ui import (
     draw_game_ui, 
     draw_level_complete, 
     draw_help_screen, 
-    draw_starfield_background
+    draw_starfield_background,
+    draw_coordinate_system
 )
 
 def main():
@@ -92,9 +93,15 @@ def main():
         
         # Draw game elements based on state
         if game.game_state == STATE_PLAYING:
+            # Draw coordinate system
+            draw_coordinate_system(screen)
+            
+            # Draw path, stars and ball
             draw_path(screen, game.path)
             draw_stars(screen, game.stars)
             draw_ball(screen, game.ball_pos)
+            
+            # Draw UI elements
             draw_game_ui(screen, game.collected_stars, game.total_stars, 
                          game.current_equation, game.input_active, game.input_text)
                          

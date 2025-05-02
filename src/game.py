@@ -1,19 +1,19 @@
 import numpy as np
 from src.settings import *
-from src.utils import safe_eval
+from src.utils import safe_eval, real_to_screen, screen_to_real
 
 class Game:
     def __init__(self):
         """Initialize game state and objects"""
-        # Ball settings
-        self.ball_pos = [50, 100]  # Start position left side
+        # Ball settings - now using real coordinates with (0,0) at center
+        self.ball_pos = [-350, 0]  # Start position left side in real coordinates
         self.ball_speed = BALL_SPEED
         self.on_path = False
         self.reset_ball = True
         
         # Game state
         self.collected_stars = 0
-        self.stars = DEFAULT_STARS.copy()
+        self.stars = DEFAULT_STARS.copy()  # Stars are now in real coordinates
         self.total_stars = len(self.stars)
         self.game_state = STATE_PLAYING
         
@@ -63,17 +63,19 @@ class Game:
         # Reset ball position if needed
         if self.reset_ball:
             try:
-                self.ball_pos = [50, self.path(50)]
+                # Start at left side of screen with x = X_MIN + 50
+                start_x = X_MIN + 50  # Real x-coordinate for ball start position
+                self.ball_pos = [start_x, self.path(start_x)]
                 self.ball_speed = BALL_SPEED
                 self.on_path = True
                 self.reset_ball = False
             except Exception as e:
                 print(f"Error resetting ball: {e}")
-                self.ball_pos = [50, HEIGHT // 2]
+                self.ball_pos = [X_MIN + 50, 0]  # Default to center height
                 self.on_path = True
                 self.reset_ball = False
 
-        # Update ball position
+        # Update ball position in real coordinates
         if self.on_path:
             self.ball_pos[0] += self.ball_speed
             try:
@@ -82,13 +84,13 @@ class Game:
                 self.ball_pos[1] += (target_y - self.ball_pos[1]) * 0.1
             except:
                 # If there's an error evaluating the path, let the ball fall
-                self.ball_pos[1] += GRAVITY
+                self.ball_pos[1] -= GRAVITY  # In real coordinates, gravity decreases y
                 
-            # Check if the ball is out of bounds
-            if self.ball_pos[0] > WIDTH or self.ball_pos[1] > HEIGHT:
+            # Check if the ball is out of bounds (in real coordinates)
+            if self.ball_pos[0] > X_MAX or self.ball_pos[0] < X_MIN or self.ball_pos[1] > Y_MAX or self.ball_pos[1] < Y_MIN:
                 self.reset_ball = True
 
-        # Check if the ball collides with any star
+        # Check if the ball collides with any star (all in real coordinates)
         for star in self.stars[:]:
             if np.sqrt((self.ball_pos[0] - star[0])**2 + (self.ball_pos[1] - star[1])**2) < BALL_RADIUS + 8:
                 self.stars.remove(star)  # Remove star if collected
