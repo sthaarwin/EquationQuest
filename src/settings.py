@@ -1,7 +1,9 @@
 import pygame
+from src.levels import get_default_equation, get_default_stars
 
 # Initialize Pygame
 pygame.init()
+pygame.mixer.init()  # Initialize sound mixer
 
 # Window settings
 WIDTH, HEIGHT = 1200, 675
@@ -30,6 +32,8 @@ NEON_YELLOW = (255, 255, 102)
 NEON_PURPLE = (180, 30, 255)
 
 # Game states
+STATE_MENU = "menu"
+STATE_LEVEL_SELECT = "level_select"
 STATE_PLAYING = "playing"
 STATE_LEVEL_COMPLETE = "level_complete"
 STATE_HELP = "help"
@@ -39,11 +43,15 @@ BALL_RADIUS = 15
 BALL_SPEED = 3
 GRAVITY = 0.0
 
-# Initial equation - modified for real coordinates to ensure the ball stays in view
-DEFAULT_EQUATION = "sin(x*0.01)*100"  # Simple sine wave that stays in reasonable bounds
+# Set initial level equation and stars (backwards compatibility)
+DEFAULT_EQUATION = get_default_equation()
+DEFAULT_STARS = get_default_stars()
 
-# Default star positions - now in real coordinates with (0,0) at center
-DEFAULT_STARS = [(-200, 100), (-100, -150), (0, 200), (150, -100), (250, 150)]
+# Sound settings
+SOUND_ENABLED = True
+SOUND_VOLUME = 0.5  # 0.0 to 1.0
+UI_SOUND_PATH = "assets/sfx/ui click.mp3"
+STAR_SOUND_PATH = "assets/sfx/star collect.mp3"
 
 # Improved font loading
 def load_font(font_name, size):
