@@ -100,16 +100,21 @@ def draw_ball(screen, ball_pos, ball_radius=BALL_RADIUS):
     # Convert from real to screen coordinates
     screen_x, screen_y = real_to_screen(ball_pos[0], ball_pos[1])
     
-    # Draw glow
+    # Check if ball is off-screen to avoid overflow errors
+    if (screen_x < -100 or screen_x > WIDTH + 100 or 
+        screen_y < -100 or screen_y > HEIGHT + 100):
+        return  # Don't try to draw the ball if it's far off-screen
+    
+    # Draw glow using safer pygame.draw.circle
     for radius in range(ball_radius + 12, ball_radius, -3):
         alpha = 30 if radius > ball_radius + 6 else 80
-        glow_color = (*NEON_PINK[:3], alpha)
-        pygame.gfxdraw.filled_circle(screen, int(screen_x), int(screen_y), radius, glow_color)
+        # Use regular circle drawing which is more robust
+        pygame.draw.circle(screen, (*NEON_PINK[:3], alpha), (int(screen_x), int(screen_y)), radius)
     
     # Draw main ball
     pygame.draw.circle(screen, NEON_PINK, (int(screen_x), int(screen_y)), ball_radius)
 
-def draw_game_ui(screen, collected_stars, total_stars, current_equation, input_active, input_text):
+def draw_game_ui(screen, collected_stars, total_stars, current_equation, input_active, input_text, is_free_mode=False, game=None):
     """Draw the main game UI elements"""
     # Draw top panel for game info
     top_panel = (10, 10, WIDTH - 20, 50)
@@ -118,22 +123,27 @@ def draw_game_ui(screen, collected_stars, total_stars, current_equation, input_a
     # Draw game title - with glow effect
     draw_text(screen, "EQUATION QUEST", (20, 20), NEON_PURPLE, TITLE_FONT, glow_effect=True)
     
-    # Draw star counter with cool icon
-    star_icon_pos = (WIDTH - 150, 25)
-    pygame.draw.polygon(screen, NEON_YELLOW,
-                      [(star_icon_pos[0], star_icon_pos[1] - 10),
-                       (star_icon_pos[0] + 3, star_icon_pos[1] - 3),
-                       (star_icon_pos[0] + 10, star_icon_pos[1] - 3),
-                       (star_icon_pos[0] + 5, star_icon_pos[1] + 3),
-                       (star_icon_pos[0] + 7, star_icon_pos[1] + 10),
-                       (star_icon_pos[0], star_icon_pos[1] + 6),
-                       (star_icon_pos[0] - 7, star_icon_pos[1] + 10),
-                       (star_icon_pos[0] - 5, star_icon_pos[1] + 3),
-                       (star_icon_pos[0] - 10, star_icon_pos[1] - 3),
-                       (star_icon_pos[0] - 3, star_icon_pos[1] - 3)])
-    
-    # No glow for counters - need to be readable
-    draw_text(screen, f"{collected_stars}/{total_stars}", (WIDTH - 120, 20), NEON_YELLOW)
+    # For free mode, show "Free Exploration" instead of stars
+    if is_free_mode:
+        # Draw mode name instead of star counter
+        draw_text(screen, "FREE EXPLORATION", (WIDTH - 240, 20), NEON_YELLOW, MAIN_FONT)
+    else:
+        # Draw star counter with cool icon for normal levels
+        star_icon_pos = (WIDTH - 150, 25)
+        pygame.draw.polygon(screen, NEON_YELLOW,
+                          [(star_icon_pos[0], star_icon_pos[1] - 10),
+                           (star_icon_pos[0] + 3, star_icon_pos[1] - 3),
+                           (star_icon_pos[0] + 10, star_icon_pos[1] - 3),
+                           (star_icon_pos[0] + 5, star_icon_pos[1] + 3),
+                           (star_icon_pos[0] + 7, star_icon_pos[1] + 10),
+                           (star_icon_pos[0], star_icon_pos[1] + 6),
+                           (star_icon_pos[0] - 7, star_icon_pos[1] + 10),
+                           (star_icon_pos[0] - 5, star_icon_pos[1] + 3),
+                           (star_icon_pos[0] - 10, star_icon_pos[1] - 3),
+                           (star_icon_pos[0] - 3, star_icon_pos[1] - 3)])
+        
+        # No glow for counters - need to be readable
+        draw_text(screen, f"{collected_stars}/{total_stars}", (WIDTH - 120, 20), NEON_YELLOW)
 
     # Draw equation panel at the bottom
     equation_panel = (10, HEIGHT - 60, WIDTH - 20, 50)
@@ -149,16 +159,72 @@ def draw_game_ui(screen, collected_stars, total_stars, current_equation, input_a
         # No glow for equation text
         draw_text(screen, "Current equation:  f(x) = " + current_equation, (20, HEIGHT - 45), NEON_BLUE)
 
-    # Draw controls helper
-    controls_panel = (WIDTH - 200, 75, 190, 120)
+    # Draw controls helper - different for free mode
+    if is_free_mode and game:
+        # Draw free mode specific UI elements
+        draw_free_exploration_ui(screen, game.user_points, game.selected_method, 
+                                game.polynomial_degree, game.rootfinding_methods)
+    else:
+        # Draw normal controls panel
+        controls_panel = (WIDTH - 200, 75, 190, 120)
+        draw_panel(screen, controls_panel, NEON_GREEN)
+        # Header with glow, controls without
+        draw_text(screen, "CONTROLS", (WIDTH - 180, 80), NEON_GREEN, MAIN_FONT, glow_effect=True)
+        # Updated to use Ctrl for all controls
+        draw_text(screen, "Ctrl+E - Edit equation", (WIDTH - 190, 110), NEON_GREEN, SMALL_FONT)
+        draw_text(screen, "Ctrl+R - Reset level", (WIDTH - 190, 130), NEON_GREEN, SMALL_FONT)
+        draw_text(screen, "Ctrl+H - Help screen", (WIDTH - 190, 150), NEON_GREEN, SMALL_FONT)
+        draw_text(screen, "Ctrl+ESC - Quit game", (WIDTH - 190, 170), NEON_GREEN, SMALL_FONT)
+
+def draw_free_exploration_ui(screen, user_points, selected_method, polynomial_degree, method_names):
+    """Draw UI specific to the free exploration mode"""
+    # Draw free mode info panel
+    info_panel = (10, 75, 270, 200)
+    draw_panel(screen, info_panel, NEON_PURPLE)
+    
+    # Draw title
+    draw_text(screen, "FREE EXPLORATION MODE", (20, 85), NEON_PURPLE, MAIN_FONT, glow_effect=True)
+    
+    # Draw point counter
+    draw_text(screen, f"Points: {len(user_points)}", (20, 120), NEON_YELLOW, SMALL_FONT)
+    
+    # Draw current method
+    method_color = NEON_GREEN
+    draw_text(screen, "Fitting Method:", (20, 150), WHITE, SMALL_FONT)
+    draw_text(screen, method_names[selected_method], (150, 150), method_color, SMALL_FONT)
+    
+    # Draw polynomial degree if using least squares
+    if selected_method == 0:  # Least Squares
+        draw_text(screen, f"Polynomial Degree: {polynomial_degree}", (20, 180), WHITE, SMALL_FONT)
+        draw_text(screen, "UP/DOWN to change degree", (20, 200), NEON_BLUE, SMALL_FONT)
+    
+    # Draw free mode controls panel
+    controls_panel = (10, 285, 270, 170)
     draw_panel(screen, controls_panel, NEON_GREEN)
-    # Header with glow, controls without
-    draw_text(screen, "CONTROLS", (WIDTH - 180, 80), NEON_GREEN, MAIN_FONT, glow_effect=True)
-    # Updated to use Ctrl for all controls
-    draw_text(screen, "Ctrl+E - Edit equation", (WIDTH - 190, 110), NEON_GREEN, SMALL_FONT)
-    draw_text(screen, "Ctrl+R - Reset level", (WIDTH - 190, 130), NEON_GREEN, SMALL_FONT)
-    draw_text(screen, "Ctrl+H - Help screen", (WIDTH - 190, 150), NEON_GREEN, SMALL_FONT)
-    draw_text(screen, "Ctrl+ESC - Quit game", (WIDTH - 190, 170), NEON_GREEN, SMALL_FONT)
+    
+    # Draw controls
+    draw_text(screen, "FREE MODE CONTROLS", (20, 295), NEON_GREEN, MAIN_FONT, glow_effect=True)
+    draw_text(screen, "CLICK - Add point", (20, 330), NEON_GREEN, SMALL_FONT)
+    draw_text(screen, "Ctrl+Z - Remove last point", (20, 355), NEON_GREEN, SMALL_FONT)
+    draw_text(screen, "Ctrl+C - Clear all points", (20, 380), NEON_GREEN, SMALL_FONT)
+    draw_text(screen, "Ctrl+M - Change fitting method", (20, 405), NEON_GREEN, SMALL_FONT)
+    draw_text(screen, "Ctrl+E - Custom equation", (20, 430), NEON_GREEN, SMALL_FONT)
+
+def draw_point_coordinates(screen, mouse_pos):
+    """Draw the coordinates of the mouse position for precise point placement"""
+    # Convert screen coordinates to real coordinates
+    real_x, real_y = screen_to_real(mouse_pos[0], mouse_pos[1])
+    
+    # Format coordinates as text
+    coord_text = f"({real_x:.1f}, {real_y:.1f})"
+    
+    # Draw small panel near mouse cursor
+    text_width = SMALL_FONT.size(coord_text)[0]
+    panel_rect = (mouse_pos[0] + 15, mouse_pos[1] - 25, text_width + 20, 25)
+    draw_panel(screen, panel_rect, NEON_BLUE)
+    
+    # Draw coordinate text
+    draw_text(screen, coord_text, (mouse_pos[0] + 25, mouse_pos[1] - 20), NEON_BLUE, SMALL_FONT)
 
 def draw_coordinate_system(screen):
     """Draw coordinate axes to visualize the real coordinate system"""
@@ -258,16 +324,17 @@ def draw_main_menu(screen, selected_item, menu_items):
     line_y = 220
     pygame.draw.line(screen, NEON_PINK, (350, line_y), (850, line_y), 2)
     
-    # Draw menu panel with exact dimensions from screenshot - MOVED UP 40 pixels
-    menu_panel = (290, 300, 620, 230)  # Changed Y from 340 to 300
+    # Draw menu panel with exact dimensions from screenshot - adjusted for 5 menu items
+    menu_panel = (290, 300, 620, 280)  # Increased height to accommodate 5 menu items
     draw_panel(screen, menu_panel, NEON_BLUE)
     
-    # Menu item positions - MOVED UP 40 pixels to match the panel
+    # Menu item positions - adjusted for 5 menu items with proper spacing
     menu_positions = [
-        (590, 330),  # Play - changed Y from 370 to 330
-        (590, 380),  # Level Select - changed Y from 420 to 380
-        (590, 430),  # Help - changed Y from 470 to 430
-        (590, 480)   # Quit - changed Y from 520 to 480
+        (590, 330),  # Play
+        (590, 380),  # Explore (new item)
+        (590, 430),  # Level Select
+        (590, 480),  # Help
+        (590, 530)   # Quit (moved down)
     ]
     
     # Draw each menu item
@@ -300,14 +367,14 @@ def draw_main_menu(screen, selected_item, menu_items):
             # Draw normal text
             draw_text(screen, item, (centered_x, y_pos), color, MAIN_FONT)
     
-    # Draw controls hint with exact position from screenshot - MOVE UP 40 pixels
-    controls_panel = (290, 545, 620, 40)  # Changed Y from 585 to 545
+    # Draw controls hint with exact position from screenshot - adjusted for larger menu panel
+    controls_panel = (290, 595, 620, 40)  # Moved down to account for taller menu panel
     draw_panel(screen, controls_panel, NEON_BLUE)
     
-    # Controls text positioned exactly like screenshot - MOVED UP 40 pixels
+    # Controls text positioned exactly like screenshot - adjusted for new position
     controls_text = "Use UP/DOWN arrows and ENTER to navigate"
     text_width = SMALL_FONT.size(controls_text)[0]
-    draw_text(screen, controls_text, (WIDTH//2 - text_width//2, 558), NEON_BLUE, SMALL_FONT)  # Changed Y from 598 to 558
+    draw_text(screen, controls_text, (WIDTH//2 - text_width//2, 608), NEON_BLUE, SMALL_FONT)
 
 def draw_level_select(screen, selected_level, unlocked_levels, level_stats):
     """Draw the level selection screen"""

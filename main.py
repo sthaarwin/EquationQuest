@@ -1,8 +1,8 @@
 import pygame
 from src.settings import *
-from src.utils import safe_eval
+from src.utils import safe_eval, screen_to_real
 from src.game import Game
-from src.levels import LEVELS  # Import LEVELS from levels.py
+from src.levels import LEVELS, is_free_level  # Import is_free_level
 from src.ui import (
     draw_text, 
     draw_panel, 
@@ -15,7 +15,8 @@ from src.ui import (
     draw_starfield_background,
     draw_coordinate_system,
     draw_main_menu,
-    draw_level_select
+    draw_level_select,
+    draw_point_coordinates  # Import new function
 )
 
 def main():
@@ -41,10 +42,17 @@ def main():
     
     while running:
         current_time = pygame.time.get_ticks()
+        mouse_pos = pygame.mouse.get_pos()
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+                
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                # Check if in free exploration mode and playing state
+                if game.is_free_mode and game.game_state == STATE_PLAYING and event.button == 1:
+                    # Add a point at the clicked position
+                    game.add_point(mouse_pos)
                 
             if event.type == pygame.KEYDOWN:
                 # Handle different input based on game state
@@ -77,7 +85,12 @@ def main():
                         game.game_state = STATE_LEVEL_SELECT
                 
                 elif game.game_state == STATE_PLAYING:
-                    # Changed: All commands now use Ctrl modifier
+                    # Check for free mode specific keys first
+                    if game.handle_free_mode_keys(event):
+                        # Key was handled by free mode
+                        continue
+                        
+                    # Normal game controls
                     if event.key == pygame.K_ESCAPE and pygame.key.get_mods() & pygame.KMOD_CTRL:
                         running = False
                     elif event.key == pygame.K_ESCAPE:
@@ -133,13 +146,18 @@ def main():
             draw_coordinate_system(screen)
             
             # Draw path, stars and ball
-            draw_path(screen, game.path)
+            draw_path(screen, lambda x: game.path(x))  # Pass as a lambda function
             draw_stars(screen, game.stars)
             draw_ball(screen, game.ball_pos)
             
-            # Draw UI elements
+            # Draw UI elements with free mode indication
             draw_game_ui(screen, game.collected_stars, game.total_stars, 
-                         game.current_equation, game.input_active, game.input_text)
+                        game.current_equation, game.input_active, game.input_text,
+                        is_free_mode=game.is_free_mode, game=game)
+            
+            # In free mode, show the real coordinates near the mouse cursor
+            if game.is_free_mode:
+                draw_point_coordinates(screen, mouse_pos)
                          
         elif game.game_state == STATE_LEVEL_COMPLETE:
             # Check if there are more levels available

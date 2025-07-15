@@ -1,8 +1,9 @@
 import numpy as np
 import pygame
 from src.settings import *
-from src.levels import LEVELS
+from src.levels import LEVELS, is_free_level
 from src.utils import safe_eval, real_to_screen, screen_to_real
+from src.rootfinding import find_best_fit
 
 class Game:
     def __init__(self):
@@ -15,7 +16,7 @@ class Game:
         
         # Menu navigation
         self.selected_menu_item = 0
-        self.menu_items = ["Play", "Level Select", "Help", "Quit"]
+        self.menu_items = ["Play", "Explore", "Level Select", "Help", "Quit"]
         self.selected_level = 0
         
         # Ball settings - now using real coordinates with (0,0) at center
@@ -34,6 +35,14 @@ class Game:
         self.current_equation = ""
         self.input_active = False
         self.input_text = ""
+        
+        # Free exploration mode
+        self.is_free_mode = False
+        self.user_points = []
+        self.fit_method = "least_squares"  # Default fitting method
+        self.polynomial_degree = 2  # Default polynomial degree
+        self.rootfinding_methods = ["Least Squares", "Lagrange", "Custom"]
+        self.selected_method = 0
         
         # Load sounds
         self.load_sounds()
@@ -82,9 +91,167 @@ class Game:
             self.input_text = self.current_equation
             self.reset_ball = True
             
-    def path(self, x):
-        """Calculate the ball's y position based on the current equation"""
-        return safe_eval(self.current_equation, x)
+            # Check if this is a free exploration level
+            self.is_free_mode = is_free_level(LEVELS[level_index])
+            if self.is_free_mode:
+                self.user_points = []  # Reset user points when entering free mode
+                self.selected_method = 0  # Reset to default method
+    
+    def add_point(self, screen_pos):
+        """Add a point at the given screen position (for free exploration mode)"""
+        if not self.is_free_mode:
+            return
+            
+        # Convert screen position to real coordinates
+        real_x, real_y = screen_to_real(screen_pos[0], screen_pos[1])
+        
+        # Add to user points
+        self.user_points.append((real_x, real_y))
+        
+        # Sort points by x coordinate for better interpolation
+        self.user_points.sort(key=lambda p: p[0])
+        
+        # Update stars to visualize points
+        self.stars = self.user_points.copy()
+        
+        # Generate equation if we have enough points
+        self.generate_equation_from_points()
+        
+    def remove_last_point(self):
+        """Remove the last added point (for free exploration mode)"""
+        if not self.is_free_mode or not self.user_points:
+            return
+            
+        self.user_points.pop()
+        self.stars = self.user_points.copy()
+        
+        # Regenerate equation
+        self.generate_equation_from_points()
+        
+    def clear_points(self):
+        """Clear all points (for free exploration mode)"""
+        if not self.is_free_mode:
+            return
+            
+        self.user_points = []
+        self.stars = []
+        self.current_equation = "0"  # Reset to flat line
+        self.reset_ball = True
+        
+    def generate_equation_from_points(self):
+        """Generate an equation that fits the user points"""
+        if len(self.user_points) < 2:
+            # Need at least 2 points to generate an equation
+            self.current_equation = "0"
+            return
+        
+        try:
+            # Get selected method
+            method = "least_squares" if self.selected_method == 0 else "lagrange"
+            
+            # Generate the fitting function
+            fit_func = find_best_fit(
+                self.user_points, 
+                method=method,
+                degree=self.polynomial_degree
+            )
+            
+            # Test the function with some values to check it works
+            test_x = self.user_points[0][0]
+            test_y = fit_func(test_x)
+            
+            # Create a function string representation for the equation
+            if method == "least_squares":
+                # For least squares, we can get the polynomial coefficients and format them
+                x_vals = np.array([p[0] for p in self.user_points])
+                y_vals = np.array([p[1] for p in self.user_points])
+                coeffs = np.polyfit(x_vals, y_vals, self.polynomial_degree)
+                
+                # Format the polynomial equation
+                terms = []
+                for i, c in enumerate(coeffs):
+                    power = len(coeffs) - i - 1
+                    if abs(c) < 1e-10:  # Skip near-zero coefficients
+                        continue
+                    if power == 0:
+                        terms.append(f"{c:.6f}".rstrip('0').rstrip('.'))
+                    elif power == 1:
+                        terms.append(f"{c:.6f}".rstrip('0').rstrip('.') + "*x")
+                    else:
+                        terms.append(f"{c:.6f}".rstrip('0').rstrip('.') + f"*x^{power}")
+                
+                self.current_equation = " + ".join(terms).replace("+ -", "- ")
+            else:
+                # For Lagrange, just show it's a Lagrange polynomial
+                point_str = ", ".join([f"({x:.1f},{y:.1f})" for x, y in self.user_points])
+                self.current_equation = f"Lagrange polynomial through {point_str}"
+            
+            # Update the input text in case the user wants to edit
+            self.input_text = self.current_equation
+            self.reset_ball = True
+            
+        except Exception as e:
+            print(f"Error generating equation: {e}")
+            self.current_equation = "0"  # Fallback to a flat line
+    
+    def cycle_fitting_method(self):
+        """Cycle through available fitting methods"""
+        if not self.is_free_mode:
+            return
+            
+        self.selected_method = (self.selected_method + 1) % len(self.rootfinding_methods)
+        self.play_ui_sound()
+        
+        # If custom method, enable equation input
+        if self.selected_method == 2:  # Custom
+            self.toggle_input()
+        else:
+            # Regenerate equation with new method
+            self.generate_equation_from_points()
+            
+    def change_polynomial_degree(self, change):
+        """Change the polynomial degree for least squares fitting"""
+        if not self.is_free_mode or self.selected_method != 0:
+            return
+            
+        # Ensure degree is between 1 and 10
+        new_degree = max(1, min(10, self.polynomial_degree + change))
+        if new_degree != self.polynomial_degree:
+            self.polynomial_degree = new_degree
+            self.play_ui_sound()
+            self.generate_equation_from_points()
+    
+    def handle_free_mode_keys(self, event):
+        """Handle key presses specific to free exploration mode"""
+        if not self.is_free_mode:
+            return False
+            
+        if event.key == pygame.K_c and pygame.key.get_mods() & pygame.KMOD_CTRL:
+            # Clear all points
+            self.clear_points()
+            return True
+            
+        elif event.key == pygame.K_z and pygame.key.get_mods() & pygame.KMOD_CTRL:
+            # Remove last point
+            self.remove_last_point()
+            return True
+            
+        elif event.key == pygame.K_m and pygame.key.get_mods() & pygame.KMOD_CTRL:
+            # Cycle through fitting methods
+            self.cycle_fitting_method()
+            return True
+            
+        elif event.key == pygame.K_UP:
+            # Increase polynomial degree
+            self.change_polynomial_degree(1)
+            return True
+            
+        elif event.key == pygame.K_DOWN:
+            # Decrease polynomial degree
+            self.change_polynomial_degree(-1)
+            return True
+            
+        return False
     
     def reset_level(self):
         """Reset the current level to initial state"""
@@ -138,11 +305,17 @@ class Game:
             if self.selected_menu_item == 0:  # Play
                 self.load_level(self.current_level)
                 self.game_state = STATE_PLAYING
-            elif self.selected_menu_item == 1:  # Level Select
+            elif self.selected_menu_item == 1:  # Explore
+                self.is_free_mode = True
+                self.clear_points()  # Clear any existing points
+                self.current_equation = "0"  # Reset to flat line
+                self.reset_ball = True
+                self.game_state = STATE_PLAYING
+            elif self.selected_menu_item == 2:  # Level Select
                 self.game_state = STATE_LEVEL_SELECT
-            elif self.selected_menu_item == 2:  # Help
+            elif self.selected_menu_item == 3:  # Help
                 self.show_help()  # Show help and remember we came from menu
-            elif self.selected_menu_item == 3:  # Quit
+            elif self.selected_menu_item == 4:  # Quit
                 return False  # Signal to quit the game
         elif self.game_state == STATE_LEVEL_SELECT:
             self.load_level(self.selected_level)
@@ -172,6 +345,15 @@ class Game:
         """Add character to equation input"""
         if self.input_active:
             self.input_text += char
+    
+    def path(self, x):
+        """Calculate the y-coordinate for a given x based on the current equation"""
+        try:
+            return safe_eval(self.current_equation, x)
+        except Exception as e:
+            # If there's an error, return 0 (flat line)
+            print(f"Error evaluating path: {e}")
+            return 0
     
     def update(self):
         """Update game state - call once per frame"""

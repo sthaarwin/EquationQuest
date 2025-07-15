@@ -33,6 +33,13 @@ LEVELS = [
         "name": "Trig Combination",
         "equation": "sin(x*0.01)*100 + cos(x*0.03)*50",
         "stars": [(-250, 0), (-125, 100), (0, -50), (125, 100), (250, -100)]
+    },
+    # Level 6: Free Exploration
+    {
+        "name": "Free Exploration",
+        "equation": "0",  # Default equation, will be replaced by user's points
+        "stars": [],      # Empty stars, user will add points
+        "type": "free"    # Special level type for free exploration
     }
 ]
 
@@ -43,3 +50,7 @@ def get_default_equation():
 def get_default_stars():
     """Get the default stars from the first level"""
     return LEVELS[0]["stars"].copy()
+
+def is_free_level(level_data):
+    """Check if the level is a free exploration level"""
+    return level_data.get("type") == "free"
