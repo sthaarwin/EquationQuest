@@ -4,35 +4,45 @@ Level definitions for Equation Quest
 
 # Level definitions - each level has an equation and star positions
 LEVELS = [
-    # Level 1: Simple sine wave
+    # Level 1: Simple linear function - stars align perfectly on y = 0.5*x
     {
-        "name": "Sine Wave",
-        "equation": "sin(x*0.01)*100",
-        "stars": [(-200, 100), (-100, -150), (0, 200), (150, -100), (250, 150)]
+        "name": "Linear Challenge",
+        "equation": "0",  # Start with flat line, solution is 0.5*x
+        "stars": [(-400, -200), (-200, -100), (0, 0), (200, 100), (400, 200)],
+        "solution": "0.5*x",
+        "hint": "Try a simple linear equation: y = mx + b"
     },
-    # Level 2: Parabola
+    # Level 2: Parabola - stars align on y = 0.002*x^2 - 50
     {
-        "name": "Parabola",
-        "equation": "0.005*x*x",
-        "stars": [(-250, 50), (-150, 100), (0, 150), (150, 100), (250, 50)]
+        "name": "Parabolic Path",
+        "equation": "x*0.001",  # Start with gentle slope, solution is parabola
+        "stars": [(-300, 130), (-150, -5), (0, -50), (150, -5), (300, 130)],
+        "solution": "0.002*x^2 - 50",
+        "hint": "A parabola opening upward: y = ax² + c"
     },
-    # Level 3: Cubic function
+    # Level 3: Sine wave - stars align perfectly on sin wave
     {
-        "name": "Cubic Function",
-        "equation": "0.00002*x*x*x",
-        "stars": [(-300, -100), (-150, 50), (0, 0), (150, -150), (300, 200)]
+        "name": "Sine Wave Master",
+        "equation": "50",  # Start with horizontal line, solution is sine wave
+        "stars": [(-314, 0), (-157, 100), (0, 0), (157, -100), (314, 0)],
+        "solution": "100*sin(x*0.01)",
+        "hint": "A trigonometric function: y = A*sin(B*x)"
     },
-    # Level 4: Cosine wave
+    # Level 4: Exponential decay - more challenging
     {
-        "name": "Cosine Wave",
-        "equation": "cos(x*0.02)*120",
-        "stars": [(-280, 100), (-140, -100), (0, 100), (140, -100), (280, 100)]
+        "name": "Exponential Curve",
+        "equation": "200 - x*0.1",  # Start with declining line, solution is exponential
+        "stars": [(-300, 370), (-150, 240), (0, 150), (150, 93), (300, 58)],
+        "solution": "150*exp(-x*0.003)",
+        "hint": "An exponential function: y = A*exp(B*x)"
     },
-    # Level 5: Combined trig
+    # Level 5: Complex combination - very challenging
     {
-        "name": "Trig Combination",
-        "equation": "sin(x*0.01)*100 + cos(x*0.03)*50",
-        "stars": [(-250, 0), (-125, 100), (0, -50), (125, 100), (250, -100)]
+        "name": "Ultimate Challenge",
+        "equation": "100 + 0.0005*x*x",  # Start with simple parabola, solution is complex
+        "stars": [(-400, 190), (-200, 90), (0, 50), (200, 90), (400, 210)],
+        "solution": "0.001*x^2 + 50*sin(x*0.02)",
+        "hint": "Combine polynomial and trigonometric: y = ax² + B*sin(C*x)"
     },
     # Level 6: Free Exploration
     {

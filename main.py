@@ -100,9 +100,17 @@ def main():
                     elif event.key == pygame.K_e and pygame.key.get_mods() & pygame.KMOD_CTRL:
                         game.toggle_input()
                     elif event.key == pygame.K_r and pygame.key.get_mods() & pygame.KMOD_CTRL:
-                        game.reset_level()
+                        # Only allow reset if not attempted yet in challenge mode
+                        if not game.has_attempted or game.is_free_mode:
+                            game.reset_level()
                     elif event.key == pygame.K_h and pygame.key.get_mods() & pygame.KMOD_CTRL:
                         game.show_help()  # Use the show_help function to properly remember the previous state
+                    elif event.key == pygame.K_t and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                        # Toggle hint display
+                        game.toggle_hint()
+                    elif event.key == pygame.K_a and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                        # Toggle answer display
+                        game.toggle_answer()
                     elif game.input_active:
                         if event.key == pygame.K_BACKSPACE:
                             game.handle_backspace()

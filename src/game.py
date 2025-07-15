@@ -14,6 +14,12 @@ class Game:
         self.current_level = 0
         self.unlocked_levels = 1  # Start with only first level unlocked
         
+        # Challenge mode settings
+        self.one_try_mode = True  # Enable challenging one-try mode
+        self.has_attempted = False  # Track if player has made an attempt
+        self.show_answer = False  # Whether to show the solution
+        self.show_hint = False   # Whether to show hint
+        
         # Menu navigation
         self.selected_menu_item = 0
         self.menu_items = ["Play", "Explore", "Level Select", "Help", "Quit"]
@@ -90,6 +96,11 @@ class Game:
             self.collected_stars = 0
             self.input_text = self.current_equation
             self.reset_ball = True
+            
+            # Reset challenge mode flags
+            self.has_attempted = False
+            self.show_answer = False
+            self.show_hint = False
             
             # Check if this is a free exploration level
             self.is_free_mode = is_free_level(LEVELS[level_index])
@@ -336,15 +347,33 @@ class Game:
         self.input_active = False
         self.reset_ball = True
         
-    def handle_backspace(self):
-        """Handle backspace key in equation input"""
-        if self.input_active:
-            self.input_text = self.input_text[:-1]
-            
-    def add_character(self, char):
-        """Add character to equation input"""
-        if self.input_active:
-            self.input_text += char
+        # Mark that player has attempted in one-try mode
+        if self.one_try_mode and not self.is_free_mode:
+            self.has_attempted = True
+    
+    def toggle_hint(self):
+        """Toggle hint display"""
+        if not self.is_free_mode and self.current_level < len(LEVELS):
+            self.show_hint = not self.show_hint
+            self.play_ui_sound()
+    
+    def toggle_answer(self):
+        """Toggle answer display"""
+        if not self.is_free_mode and self.current_level < len(LEVELS):
+            self.show_answer = not self.show_answer
+            self.play_ui_sound()
+    
+    def get_current_hint(self):
+        """Get hint for current level"""
+        if self.current_level < len(LEVELS) and "hint" in LEVELS[self.current_level]:
+            return LEVELS[self.current_level]["hint"]
+        return "No hint available"
+    
+    def get_current_solution(self):
+        """Get solution for current level"""
+        if self.current_level < len(LEVELS) and "solution" in LEVELS[self.current_level]:
+            return LEVELS[self.current_level]["solution"]
+        return "No solution available"
     
     def path(self, x):
         """Calculate the y-coordinate for a given x based on the current equation"""
@@ -397,6 +426,16 @@ class Game:
                 self.collected_stars += 1
                 self.play_star_sound()  # Play star collection sound
                 
-        # Check if all stars are collected
-        if self.collected_stars == self.total_stars and self.total_stars > 0:
+        # Check if all stars are collected (but not in free mode)
+        if not self.is_free_mode and self.collected_stars == self.total_stars and self.total_stars > 0:
             self.game_state = STATE_LEVEL_COMPLETE
+    
+    def handle_backspace(self):
+        """Handle backspace key in equation input"""
+        if self.input_active:
+            self.input_text = self.input_text[:-1]
+            
+    def add_character(self, char):
+        """Add character to equation input"""
+        if self.input_active:
+            self.input_text += char

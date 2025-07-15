@@ -30,6 +30,7 @@ NEON_PINK = (255, 20, 147)
 NEON_GREEN = (57, 255, 20)
 NEON_YELLOW = (255, 255, 102)
 NEON_PURPLE = (180, 30, 255)
+NEON_RED = (255, 30, 30)
 
 # Game states
 STATE_MENU = "menu"
