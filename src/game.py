@@ -439,3 +439,23 @@ class Game:
         """Add character to equation input"""
         if self.input_active:
             self.input_text += char
+    
+    def handle_level_progress(self, screen):
+        """Handle level progression and completion screens"""
+        # If all stars have been collected, show level complete screen
+        if self.collected_stars == self.total_stars and self.total_stars > 0:
+            self.levels_data[self.current_level]["completed"] = True
+            self.levels_data[self.current_level]["stars"] = self.total_stars
+            self.save_progress()  # Save progress to file
+            
+            # Show level complete screen
+            next_level_available = self.current_level < len(self.levels_data) - 1
+            draw_level_complete(screen, self.total_stars, next_level_available)
+            return True  # Indicate we're showing a level complete screen
+        
+        # If attempt has been used and not all stars collected, show level failed screen
+        elif self.has_attempted and self.collected_stars < self.total_stars and not self.is_free_mode:
+            draw_level_failed(screen, self.collected_stars, self.total_stars)
+            return True  # Indicate we're showing a level failed screen
+            
+        return False  # No special screens to show

@@ -156,7 +156,8 @@ def main():
             # Draw path, stars and ball
             draw_path(screen, lambda x: game.path(x))  # Pass as a lambda function
             draw_stars(screen, game.stars)
-            draw_ball(screen, game.ball_pos)
+            if not game.is_free_mode:
+                draw_ball(screen, game.ball_pos)
             
             # Draw UI elements with free mode indication
             draw_game_ui(screen, game.collected_stars, game.total_stars, 

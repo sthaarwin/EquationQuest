@@ -265,6 +265,20 @@ def draw_level_complete(screen, total_stars, next_level_available=True):
     draw_text(screen, "Press Ctrl + R to restart level", (WIDTH//4 + 70, HEIGHT//4 + 190), NEON_BLUE)
     draw_text(screen, "Press ESC for level selection", (WIDTH//4 + 70, HEIGHT//4 + 230), NEON_BLUE)
 
+def draw_level_failed(screen, collected_stars, total_stars):
+    """Draw level failed screen similar to level complete screen"""
+    panel = (WIDTH//4, HEIGHT//4, WIDTH//2, HEIGHT//2)
+    draw_panel(screen, panel, NEON_RED)
+    
+    # Title with glow, other text without
+    draw_text(screen, "LEVEL FAILED!", (WIDTH//4 + 70, HEIGHT//4 + 40), NEON_RED, TITLE_FONT, glow_effect=True)
+    draw_text(screen, f"You collected {collected_stars} of {total_stars} stars", (WIDTH//4 + 60, HEIGHT//4 + 100), NEON_YELLOW)
+    
+    # Options for the player
+    draw_text(screen, "Press Ctrl + R to restart level", (WIDTH//4 + 70, HEIGHT//4 + 150), NEON_BLUE)
+    draw_text(screen, "Press ESC for level selection", (WIDTH//4 + 70, HEIGHT//4 + 190), NEON_BLUE)
+    draw_text(screen, "Try a different equation next time!", (WIDTH//4 + 70, HEIGHT//4 + 230), NEON_GREEN)
+
 def draw_help_screen(screen):
     """Draw help screen with instructions - updated for real coordinates"""
     panel = (WIDTH//6, HEIGHT//6, WIDTH*2//3, HEIGHT*2//3)
@@ -373,58 +387,87 @@ def draw_level_select(screen, selected_level, unlocked_levels, level_stats):
     # Import LEVELS here to avoid circular imports
     from src.levels import LEVELS
     
-    # Draw title panel - moved up and made smaller
-    title_panel = (WIDTH//4, 50, WIDTH//2, 60)
+    # Draw title panel at the top
+    title_panel = (WIDTH//4, 50, WIDTH//2, 70)
     draw_panel(screen, title_panel, NEON_GREEN)
     
     # Draw title with glow effect
-    draw_text(screen, "SELECT LEVEL", (WIDTH//4 + 80, 70), 
-             NEON_GREEN, TITLE_FONT)
+    title_x = WIDTH//2 - TITLE_FONT.size("SELECT LEVEL")[0]//2  # Center the title
+    draw_text(screen, "SELECT LEVEL", (title_x, 65), 
+             NEON_GREEN, TITLE_FONT, glow_effect=True)
     
     # Calculate proper spacing for level items
     visible_levels = min(unlocked_levels, len(level_stats))
-    item_height = 45  # Slightly smaller items
-    panel_height = visible_levels * item_height + 20  # Add padding
+    item_height = 50  # Height for each level item
+    panel_height = visible_levels * item_height + 30  # Add padding
     
-    # Draw level selection panel - repositioned with proper spacing
-    level_panel = (WIDTH//4, 130, WIDTH//2, panel_height)
+    # Draw level selection panel
+    level_panel = (WIDTH//4, 140, WIDTH//2, panel_height)
     draw_panel(screen, level_panel, NEON_BLUE)
     
     # Draw level items with proper spacing
     for i in range(visible_levels):
         # Determine color based on selection and completion
         if i == selected_level:
-            color = NEON_GREEN  # Selected level
+            color = NEON_GREEN  # Selected level but with reduced glow effect
+            # Draw softer highlight background for selected level
+            highlight_rect = (WIDTH//4 + 5, 150 + i * item_height, WIDTH//2 - 10, item_height - 5)
+            s = pygame.Surface((highlight_rect[2], highlight_rect[3]))
+            s.set_alpha(40)  # Very subtle highlight
+            s.fill(NEON_GREEN)
+            screen.blit(s, (highlight_rect[0], highlight_rect[1]))
         elif level_stats[i]["completed"]:
             color = NEON_YELLOW  # Completed level
         else:
             color = WHITE  # Unlocked but not completed
             
-        y_pos = 145 + i * item_height  # Start inside panel with proper spacing
+        # Calculate vertical position with proper spacing
+        y_pos = 155 + i * item_height
         
         # Draw level number and name
         level_text = f"Level {i+1}: {LEVELS[i]['name']}"
-        draw_text(screen, level_text, (WIDTH//3 - 70, y_pos), color, MAIN_FONT, 
-                 glow_effect=(i == selected_level))
+        draw_text(screen, level_text, (WIDTH//4 + 25, y_pos), color, MAIN_FONT, 
+                 glow_effect=False)  # No glow effect for better readability
         
         # Draw stars if level has been completed
         if level_stats[i]["completed"]:
             stars_text = f"{level_stats[i]['stars']} ★"
-            draw_text(screen, stars_text, (WIDTH*2//3 - 50, y_pos), NEON_YELLOW, MAIN_FONT)
+            stars_x = WIDTH//4 + WIDTH//2 - 80  # Right-align stars
+            draw_text(screen, stars_text, (stars_x, y_pos), NEON_YELLOW, MAIN_FONT)
     
-    # Draw locked levels (if any)
-    locked_start = 145 + visible_levels * item_height
-    for i in range(unlocked_levels, min(len(level_stats), unlocked_levels + 3)):  # Show max 3 locked levels
-        y_pos = locked_start + (i - unlocked_levels) * item_height
-        draw_text(screen, f"Level {i+1} (Locked)", (WIDTH//3 - 70, y_pos), 
-                 (100, 100, 100), MAIN_FONT)  # Darker gray for locked levels
+    # Calculate position for locked levels panel
+    locked_panel_y = level_panel[1] + level_panel[3] + 20
     
-    # Draw back button - positioned with proper spacing from level panel
-    back_y = level_panel[1] + level_panel[3] + 30  # 30px gap from level panel
-    back_panel = (WIDTH//4, back_y, WIDTH//2, 50)
+    # Only show locked levels if there are any
+    if unlocked_levels < len(level_stats):
+        # Calculate height for locked levels panel
+        locked_count = min(3, len(level_stats) - unlocked_levels)  # Show up to 3 locked levels
+        locked_panel_height = locked_count * 40 + 20
+        
+        # Draw locked levels panel
+        locked_panel = (WIDTH//4, locked_panel_y, WIDTH//2, locked_panel_height)
+        draw_panel(screen, locked_panel, (50, 50, 80))  # Darker color for locked panel
+        
+        # Draw locked level items
+        for i in range(unlocked_levels, min(len(level_stats), unlocked_levels + 3)):
+            y_pos = locked_panel_y + 20 + (i - unlocked_levels) * 40
+            draw_text(screen, f"Level {i+1} (Locked)", (WIDTH//4 + 25, y_pos), 
+                     (150, 150, 150), MAIN_FONT)
+        
+        # Update y-position for back button
+        back_y = locked_panel[1] + locked_panel[3] + 20
+    else:
+        # No locked levels, position back button directly after level panel
+        back_y = locked_panel_y
+    
+    # Draw back button
+    back_panel = (WIDTH//4, back_y, WIDTH//2, 60)
     draw_panel(screen, back_panel, NEON_PINK)
-    draw_text(screen, "ESC - Return to Main Menu", (WIDTH//3, back_y + 15), 
-             NEON_PINK, MAIN_FONT)
+    
+    # Center back button text
+    back_text = "ESC - Return to Main Menu"
+    back_x = WIDTH//2 - MAIN_FONT.size(back_text)[0]//2
+    draw_text(screen, back_text, (back_x, back_y + 20), NEON_PINK, MAIN_FONT)
 
 def draw_challenge_mode_ui(screen, game):
     """Draw UI specific to challenge mode with hints and answers"""
@@ -439,8 +482,12 @@ def draw_challenge_mode_ui(screen, game):
     # Calculate additional height needed for hint
     if game.show_hint:
         hint_text = game.get_current_hint()
-        if len(hint_text) > 35:
-            hint_height = 40  # 2 lines
+        # Better hint text handling for proper wrapping
+        max_chars = 30  # Reduced for better fit
+        if len(hint_text) > max_chars:
+            # If hint needs multiple lines, allocate more space
+            hint_lines = [hint_text[i:i+max_chars] for i in range(0, len(hint_text), max_chars)]
+            hint_height = min(len(hint_lines), 3) * 20  # Support up to 3 lines
         else:
             hint_height = 20  # 1 line
     
@@ -457,10 +504,20 @@ def draw_challenge_mode_ui(screen, game):
     draw_text(screen, "CHALLENGE MODE", (20, 85), NEON_PURPLE, MAIN_FONT, glow_effect=True)
     
     current_y = 115
-    
-    # Show attempt status
+
+    # Only show attempt status if not in level complete/failed state
+    # Do not show LEVEL FAILED if all stars are collected
     if game.has_attempted:
-        draw_text(screen, "Attempt Used - One Try Only!", (20, current_y), NEON_RED, SMALL_FONT)
+        if (
+            game.collected_stars < game.total_stars
+            and not game.is_free_mode
+            and getattr(game, 'game_state', None) not in ('level_complete', 'level_failed', 'LEVEL_COMPLETE', 'LEVEL_FAILED')
+        ):
+            draw_text(screen, "LEVEL FAILED!", (20, current_y), NEON_RED, SMALL_FONT)
+        elif game.collected_stars == game.total_stars:
+            draw_text(screen, "Level Complete!", (20, current_y), NEON_GREEN, SMALL_FONT)
+        else:
+            draw_text(screen, "Attempt Used - One Try Only!", (20, current_y), NEON_RED, SMALL_FONT)
     else:
         draw_text(screen, "One Try Only - Make it count!", (20, current_y), NEON_YELLOW, SMALL_FONT)
     
@@ -469,13 +526,14 @@ def draw_challenge_mode_ui(screen, game):
     # Show hint if enabled - properly contained within panel
     if game.show_hint:
         hint_text = game.get_current_hint()
-        # Wrap long hints to fit within panel width (260px available)
-        max_chars = 32  # Adjusted for better fit
+        # Improved wrapping for hints to fit within panel width
+        max_chars = 30  # Reduced for better fit
         if len(hint_text) > max_chars:
             hint_lines = [hint_text[i:i+max_chars] for i in range(0, len(hint_text), max_chars)]
-            for i, line in enumerate(hint_lines[:2]):  # Max 2 lines
-                draw_text(screen, f"Hint: {line}" if i == 0 else f"      {line}", (20, current_y + i*20), NEON_BLUE, SMALL_FONT)
-            current_y += 40
+            for i, line in enumerate(hint_lines[:3]):  # Support up to 3 lines
+                prefix = "Hint: " if i == 0 else "      "
+                draw_text(screen, f"{prefix}{line}", (20, current_y + i*20), NEON_BLUE, SMALL_FONT)
+            current_y += min(len(hint_lines), 3) * 20
         else:
             draw_text(screen, f"Hint: {hint_text}", (20, current_y), NEON_BLUE, SMALL_FONT)
             current_y += 20
@@ -484,7 +542,7 @@ def draw_challenge_mode_ui(screen, game):
     if game.show_answer:
         answer_text = game.get_current_solution()
         # Truncate answer if too long to fit
-        max_answer_chars = 28
+        max_answer_chars = 25  # Reduced to ensure it fits
         if len(answer_text) > max_answer_chars:
             answer_text = answer_text[:max_answer_chars] + "..."
         draw_text(screen, f"Answer: {answer_text}", (20, current_y), NEON_GREEN, SMALL_FONT)
