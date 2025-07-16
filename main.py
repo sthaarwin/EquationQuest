@@ -16,7 +16,8 @@ from src.ui import (
     draw_coordinate_system,
     draw_main_menu,
     draw_level_select,
-    draw_point_coordinates  # Import new function
+    draw_point_coordinates,  # Import new function
+    draw_level_failed  # Import draw_level_failed function
 )
 
 def main():
@@ -80,6 +81,13 @@ def main():
                     if event.key == pygame.K_RETURN:
                         game.next_level()
                     elif event.key == pygame.K_r and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                        game.reset_level()
+                    elif event.key == pygame.K_ESCAPE:
+                        game.game_state = STATE_LEVEL_SELECT
+                
+                # Add handling for level failed state
+                elif game.game_state == "level_failed":
+                    if event.key == pygame.K_r and pygame.key.get_mods() & pygame.KMOD_CTRL:
                         game.reset_level()
                     elif event.key == pygame.K_ESCAPE:
                         game.game_state = STATE_LEVEL_SELECT
@@ -159,19 +167,28 @@ def main():
             if not game.is_free_mode:
                 draw_ball(screen, game.ball_pos)
             
-            # Draw UI elements with free mode indication
-            draw_game_ui(screen, game.collected_stars, game.total_stars, 
-                        game.current_equation, game.input_active, game.input_text,
-                        is_free_mode=game.is_free_mode, game=game)
-            
-            # In free mode, show the real coordinates near the mouse cursor
-            if game.is_free_mode:
-                draw_point_coordinates(screen, mouse_pos)
+            # Check for level completion or failure and show appropriate screen
+            if game.handle_level_progress(screen):
+                # Level complete or failed screen is being shown, skip normal UI
+                pass
+            else:
+                # Draw normal UI elements with free mode indication
+                draw_game_ui(screen, game.collected_stars, game.total_stars, 
+                            game.current_equation, game.input_active, game.input_text,
+                            is_free_mode=game.is_free_mode, game=game)
+                
+                # In free mode, show the real coordinates near the mouse cursor
+                if game.is_free_mode:
+                    draw_point_coordinates(screen, mouse_pos)
                          
         elif game.game_state == STATE_LEVEL_COMPLETE:
             # Check if there are more levels available
             next_level_available = game.current_level + 1 < len(LEVELS)
             draw_level_complete(screen, game.collected_stars, next_level_available)
+            
+        elif game.game_state == "level_failed":
+            # Draw level failed screen
+            draw_level_failed(screen, game.collected_stars, game.total_stars)
             
         elif game.game_state == STATE_HELP:
             draw_help_screen(screen)

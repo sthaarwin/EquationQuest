@@ -31,6 +31,9 @@ class Game:
         self.on_path = False
         self.reset_ball = True
         
+        # Level completion tracking
+        self.level_completed = False  # Track if level has been completed (success or failure)
+        
         # Stars tracking
         self.collected_stars = 0
         self.stars = []
@@ -267,6 +270,7 @@ class Game:
     def reset_level(self):
         """Reset the current level to initial state"""
         self.load_level(self.current_level)
+        self.level_completed = False  # Reset completion flag
         self.game_state = STATE_PLAYING
         self.play_ui_sound()
         
@@ -388,6 +392,10 @@ class Game:
         """Update game state - call once per frame"""
         if self.game_state != STATE_PLAYING:
             return
+        
+        # Skip ball updates in free mode
+        if self.is_free_mode:
+            return
             
         # Reset ball position if needed
         if self.reset_ball:
@@ -399,13 +407,15 @@ class Game:
                 self.ball_speed = BALL_SPEED
                 self.on_path = True
                 self.reset_ball = False
+                self.level_completed = False  # Reset completion flag when ball starts
             except Exception as e:
                 self.ball_pos = [X_MIN + 50, 0]  # Default to center height
                 self.on_path = True
                 self.reset_ball = False
+                self.level_completed = False
 
         # Update ball position in real coordinates
-        if self.on_path:
+        if self.on_path and not self.level_completed:
             self.ball_pos[0] += self.ball_speed
             try:
                 target_y = self.path(self.ball_pos[0])
@@ -415,8 +425,18 @@ class Game:
                 # If there's an error evaluating the path, let the ball fall
                 self.ball_pos[1] -= GRAVITY  # In real coordinates, gravity decreases y
                 
-            # Check if the ball is out of bounds (in real coordinates)
-            if self.ball_pos[0] > X_MAX or self.ball_pos[0] < X_MIN or self.ball_pos[1] > Y_MAX or self.ball_pos[1] < Y_MIN:
+            # Check if ball has reached the right side of screen
+            if self.ball_pos[0] >= X_MAX - 50:  # Near right edge
+                if not self.level_completed:
+                    self.level_completed = True
+                    # Determine if level was completed successfully or failed
+                    if self.collected_stars == self.total_stars and self.total_stars > 0:
+                        self.game_state = STATE_LEVEL_COMPLETE
+                    elif self.has_attempted and not self.is_free_mode:
+                        self.game_state = "level_failed"
+                
+            # Check if the ball is out of bounds vertically or left side
+            elif self.ball_pos[0] < X_MIN or self.ball_pos[1] > Y_MAX or self.ball_pos[1] < Y_MIN:
                 self.reset_ball = True
 
         # Check if the ball collides with any star (all in real coordinates)
@@ -426,10 +446,6 @@ class Game:
                 self.collected_stars += 1
                 self.play_star_sound()  # Play star collection sound
                 
-        # Check if all stars are collected (but not in free mode)
-        if not self.is_free_mode and self.collected_stars == self.total_stars and self.total_stars > 0:
-            self.game_state = STATE_LEVEL_COMPLETE
-    
     def handle_backspace(self):
         """Handle backspace key in equation input"""
         if self.input_active:
@@ -442,19 +458,24 @@ class Game:
     
     def handle_level_progress(self, screen):
         """Handle level progression and completion screens"""
+        # Only show completion/failure screens if the level has been completed (ball reached right side)
+        if not self.level_completed:
+            return False
+            
         # If all stars have been collected, show level complete screen
         if self.collected_stars == self.total_stars and self.total_stars > 0:
-            self.levels_data[self.current_level]["completed"] = True
-            self.levels_data[self.current_level]["stars"] = self.total_stars
-            self.save_progress()  # Save progress to file
+            self.level_stats[self.current_level]["completed"] = True
+            self.level_stats[self.current_level]["stars"] = self.total_stars
             
             # Show level complete screen
-            next_level_available = self.current_level < len(self.levels_data) - 1
+            next_level_available = self.current_level < len(LEVELS) - 1
+            from src.ui import draw_level_complete
             draw_level_complete(screen, self.total_stars, next_level_available)
             return True  # Indicate we're showing a level complete screen
         
         # If attempt has been used and not all stars collected, show level failed screen
         elif self.has_attempted and self.collected_stars < self.total_stars and not self.is_free_mode:
+            from src.ui import draw_level_failed
             draw_level_failed(screen, self.collected_stars, self.total_stars)
             return True  # Indicate we're showing a level failed screen
             

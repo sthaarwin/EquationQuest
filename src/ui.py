@@ -505,17 +505,15 @@ def draw_challenge_mode_ui(screen, game):
     
     current_y = 115
 
-    # Only show attempt status if not in level complete/failed state
-    # Do not show LEVEL FAILED if all stars are collected
+    # Show attempt status - only show LEVEL FAILED if level is complete and not all stars collected
     if game.has_attempted:
-        if (
-            game.collected_stars < game.total_stars
-            and not game.is_free_mode
-            and getattr(game, 'game_state', None) not in ('level_complete', 'level_failed', 'LEVEL_COMPLETE', 'LEVEL_FAILED')
-        ):
-            draw_text(screen, "LEVEL FAILED!", (20, current_y), NEON_RED, SMALL_FONT)
-        elif game.collected_stars == game.total_stars:
+        if game.collected_stars == game.total_stars and game.total_stars > 0:
             draw_text(screen, "Level Complete!", (20, current_y), NEON_GREEN, SMALL_FONT)
+        elif (game.collected_stars < game.total_stars and 
+              not game.is_free_mode and 
+              game.game_state == STATE_LEVEL_COMPLETE):
+            # Only show LEVEL FAILED if we're in a failed state (not still playing)
+            draw_text(screen, "LEVEL FAILED!", (20, current_y), NEON_RED, SMALL_FONT)
         else:
             draw_text(screen, "Attempt Used - One Try Only!", (20, current_y), NEON_RED, SMALL_FONT)
     else:
