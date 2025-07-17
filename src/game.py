@@ -93,11 +93,19 @@ class Game:
         """Load a specific level"""
         if 0 <= level_index < len(LEVELS):
             self.current_level = level_index
-            self.current_equation = LEVELS[level_index]["equation"]
+            # For challenge levels, start with a neutral equation so ball behavior is predictable
+            if not is_free_level(LEVELS[level_index]):
+                self.current_equation = "0"  # Start with flat line for predictable ball behavior
+                self.input_text = ""  # Clear input text so player knows to enter equation
+                self.input_active = True  # Automatically start in input mode for challenge levels
+            else:
+                self.current_equation = LEVELS[level_index]["equation"]
+                self.input_text = self.current_equation
+                self.input_active = False
+            
             self.stars = LEVELS[level_index]["stars"].copy()
             self.total_stars = len(self.stars)
             self.collected_stars = 0
-            self.input_text = self.current_equation
             self.reset_ball = True
             
             # Reset challenge mode flags

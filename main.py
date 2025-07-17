@@ -126,6 +126,13 @@ def main():
                             backspace_timer = current_time + backspace_delay
                         else:
                             game.add_character(event.unicode)
+                    else:
+                        # Auto-enable input mode when user starts typing (not in free mode)
+                        if (not game.is_free_mode and 
+                            event.unicode.isprintable() and 
+                            event.unicode not in [' ', '\t', '\r', '\n']):
+                            game.input_active = True
+                            game.add_character(event.unicode)
                 
                 elif game.game_state == STATE_HELP:
                     # Return to the previous state (menu or playing)

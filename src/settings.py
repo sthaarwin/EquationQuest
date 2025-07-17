@@ -41,7 +41,7 @@ STATE_HELP = "help"
 
 # Ball settings
 BALL_RADIUS = 15
-BALL_SPEED = 3
+BALL_SPEED = 5 
 GRAVITY = 0.0
 
 # Set initial level equation and stars (backwards compatibility)

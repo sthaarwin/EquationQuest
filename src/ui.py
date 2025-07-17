@@ -505,21 +505,29 @@ def draw_challenge_mode_ui(screen, game):
     
     current_y = 115
 
-    # Show attempt status - only show LEVEL FAILED if level is complete and not all stars collected
-    if game.has_attempted:
-        if game.collected_stars == game.total_stars and game.total_stars > 0:
-            draw_text(screen, "Level Complete!", (20, current_y), NEON_GREEN, SMALL_FONT)
-        elif (game.collected_stars < game.total_stars and 
-              not game.is_free_mode and 
-              game.game_state == STATE_LEVEL_COMPLETE):
-            # Only show LEVEL FAILED if we're in a failed state (not still playing)
-            draw_text(screen, "LEVEL FAILED!", (20, current_y), NEON_RED, SMALL_FONT)
-        else:
-            draw_text(screen, "Attempt Used - One Try Only!", (20, current_y), NEON_RED, SMALL_FONT)
+    # Show instruction to enter equation if input is active and no equation yet
+    if game.input_active and (not game.input_text or game.input_text.strip() == ""):
+        draw_text(screen, "Enter your equation and press ENTER", (20, current_y), NEON_YELLOW, SMALL_FONT)
+        current_y += 25
+    elif not game.has_attempted and game.current_equation == "0":
+        draw_text(screen, "Type your equation to guide the ball!", (20, current_y), NEON_YELLOW, SMALL_FONT)
+        current_y += 25
     else:
-        draw_text(screen, "One Try Only - Make it count!", (20, current_y), NEON_YELLOW, SMALL_FONT)
-    
-    current_y += 25
+        # Show attempt status - only show LEVEL FAILED if level is complete and not all stars collected
+        if game.has_attempted:
+            if game.collected_stars == game.total_stars and game.total_stars > 0:
+                draw_text(screen, "Level Complete!", (20, current_y), NEON_GREEN, SMALL_FONT)
+            elif (game.collected_stars < game.total_stars and 
+                  not game.is_free_mode and 
+                  game.game_state == STATE_LEVEL_COMPLETE):
+                # Only show LEVEL FAILED if we're in a failed state (not still playing)
+                draw_text(screen, "LEVEL FAILED!", (20, current_y), NEON_RED, SMALL_FONT)
+            else:
+                draw_text(screen, "Attempt Used - One Try Only!", (20, current_y), NEON_RED, SMALL_FONT)
+        else:
+            draw_text(screen, "One Try Only - Make it count!", (20, current_y), NEON_YELLOW, SMALL_FONT)
+        
+        current_y += 25
     
     # Show hint if enabled - properly contained within panel
     if game.show_hint:
@@ -548,15 +556,23 @@ def draw_challenge_mode_ui(screen, game):
     
     # Draw controls panel - positioned below info panel with gap
     controls_y = info_panel[1] + info_panel[3] + 10
-    controls_panel = (10, controls_y, 280, 200)
+    controls_panel = (10, controls_y, 280, 220)  # Increased height for better instruction
     draw_panel(screen, controls_panel, NEON_GREEN)
     
     # Draw controls
     control_y = controls_y + 10
     draw_text(screen, "CONTROLS", (20, control_y), NEON_GREEN, MAIN_FONT, glow_effect=True)
     control_y += 30
-    draw_text(screen, "Ctrl+E - Edit equation", (20, control_y), NEON_GREEN, SMALL_FONT)
-    control_y += 20
+    
+    # Better equation input instructions
+    # if game.input_active:
+    #     draw_text(screen, "TYPE equation then press ENTER", (20, control_y), NEON_YELLOW, SMALL_FONT)
+    #     control_y += 20
+    #     draw_text(screen, "Example: 0.002*x^2 - 50", (20, control_y), NEON_BLUE, SMALL_FONT)
+    # else:
+    #     draw_text(screen, "START TYPING to enter equation", (20, control_y), NEON_GREEN, SMALL_FONT)
+    
+    # control_y += 25
     
     # Only show reset if not attempted yet or in free mode
     if not game.has_attempted or game.is_free_mode:
